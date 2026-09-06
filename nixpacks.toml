@@ -18,7 +18,11 @@
 # baked into a layer — it's just declared as available.
 
 [phases.setup]
-nixPkgs = ["python312", "nodejs_20"]
+# nixpkgs' python312 does NOT bundle pip (unlike a normal python.org
+# install) — pip is its own separate nix package. Without it, `python -m
+# pip` fails with "No module named pip" even though python itself is on
+# PATH correctly.
+nixPkgs = ["python312", "python312Packages.pip", "nodejs_20"]
 
 [phases.install]
 cmds = [
