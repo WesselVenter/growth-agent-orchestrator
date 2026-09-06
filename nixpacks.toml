@@ -6,13 +6,23 @@
 # The actual start command lives in railway.toml's [deploy].startCommand,
 # which takes precedence over any [start] here — deliberately omitted so
 # there's a single source of truth for how the app boots.
+#
+# Note on the "SecretsUsedInArgOrEnv" build warning some Railway deploys
+# show for ANTHROPIC_API_KEY / SESSION_SECRET_KEY: this file declares no
+# [variables] and no secret ever appears in a build cmd here — the build
+# phase (pip install, npm ci, npm run build) never reads either one. The
+# warning comes from Railway/Nixpacks forwarding all configured service
+# variables into the build stage as Docker ARGs by default, which happens
+# regardless of what this file contains. It's non-blocking, and since
+# nothing in the build phase consumes those values, no secret is actually
+# baked into a layer — it's just declared as available.
 
 [phases.setup]
 nixPkgs = ["python312", "nodejs_20"]
 
 [phases.install]
 cmds = [
-  "pip install -r requirements.txt",
+  "python -m pip install -r requirements.txt",
   "npm --prefix frontend ci",
 ]
 
