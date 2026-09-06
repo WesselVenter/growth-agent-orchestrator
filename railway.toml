@@ -8,10 +8,12 @@
 builder = "NIXPACKS"
 
 [deploy]
-# Applies any pending Alembic migrations, then starts the app. Safe to run
-# on every deploy — `alembic upgrade head` is a no-op once the schema is
-# already current.
-startCommand = "python -m alembic upgrade head && python -m uvicorn api.main:app --host 0.0.0.0 --port $PORT"
+# Activates the venv nixpacks.toml installs dependencies into (packages
+# live in /opt/venv, not system site-packages, so a bare `python` here
+# would fail with ModuleNotFoundError), then applies any pending Alembic
+# migrations, then starts the app. Migrations are safe to run on every
+# deploy — `alembic upgrade head` is a no-op once the schema is current.
+startCommand = ". /opt/venv/bin/activate && python -m alembic upgrade head && python -m uvicorn api.main:app --host 0.0.0.0 --port $PORT"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"

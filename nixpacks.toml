@@ -3,32 +3,31 @@
 # automatic language detection cannot be trusted to provision Node at all.
 # Declaring both toolchains here guarantees `npm` exists during the build.
 #
-# The actual start command lives in railway.toml's [deploy].startCommand,
-# which takes precedence over any [start] here — deliberately omitted so
-# there's a single source of truth for how the app boots.
-#
-# Note on the "SecretsUsedInArgOrEnv" build warning some Railway deploys
-# show for ANTHROPIC_API_KEY / SESSION_SECRET_KEY: this file declares no
-# [variables] and no secret ever appears in a build cmd here — the build
-# phase (pip install, npm ci, npm run build) never reads either one. The
-# warning comes from Railway/Nixpacks forwarding all configured service
-# variables into the build stage as Docker ARGs by default, which happens
-# regardless of what this file contains. It's non-blocking, and since
-# nothing in the build phase consumes those values, no secret is actually
-# baked into a layer — it's just declared as available.
+# pip is installed via venv + ensurepip rather than a nix package
+# (python312Packages.pip) — that package didn't reliably resolve into the
+# active Nix profile for this build's nixpkgs snapshot ("No module named
+# pip" despite being declared). ensurepip is part of the Python standard
+# library bundled with python312 itself, so it doesn't depend on Nix
+# packaging at all. Every phase/command that needs the venv's
+# Python/pip must explicitly source the activate script first, since each
+# cmd entry runs in its own shell — activation doesn't persist between
+# them. railway.toml's [deploy].startCommand (the actual source of truth
+# for how the app boots, taking precedence over [start] below) does the
+# same activation.
 
 [phases.setup]
-# nixpkgs' python312 does NOT bundle pip (unlike a normal python.org
-# install) — pip is its own separate nix package. Without it, `python -m
-# pip` fails with "No module named pip" even though python itself is on
-# PATH correctly.
-nixPkgs = ["python312", "python312Packages.pip", "nodejs_20"]
+nixPkgs = ["python312", "nodejs_20"]
 
 [phases.install]
 cmds = [
-  "python -m pip install -r requirements.txt",
+  "python -m venv /opt/venv",
+  ". /opt/venv/bin/activate && python -m ensurepip --upgrade",
+  ". /opt/venv/bin/activate && python -m pip install -r requirements.txt",
   "npm --prefix frontend ci",
 ]
 
 [phases.build]
 cmds = ["npm --prefix frontend run build"]
+
+[start]
+cmd = ". /opt/venv/bin/activate && python -m alembic upgrade head && python -m uvicorn api.main:app --host 0.0.0.0 --port $PORT"
