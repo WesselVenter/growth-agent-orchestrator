@@ -1,0 +1,20 @@
+# Explicit Nixpacks build config. This is a mixed Python/Node repo — the
+# only package.json lives in frontend/, not the repo root, so Railway's
+# automatic language detection cannot be trusted to provision Node at all.
+# Declaring both toolchains here guarantees `npm` exists during the build.
+#
+# The actual start command lives in railway.toml's [deploy].startCommand,
+# which takes precedence over any [start] here — deliberately omitted so
+# there's a single source of truth for how the app boots.
+
+[phases.setup]
+nixPkgs = ["python312", "nodejs_20"]
+
+[phases.install]
+cmds = [
+  "pip install -r requirements.txt",
+  "npm --prefix frontend ci",
+]
+
+[phases.build]
+cmds = ["npm --prefix frontend run build"]
