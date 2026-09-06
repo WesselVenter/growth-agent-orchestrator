@@ -122,11 +122,15 @@ separate frontend host, no CORS to configure.
 2. **Create a service** from this repo (GitHub repo or `railway up` from
    the CLI). Railway will pick up `railway.toml` and `nixpacks.toml`
    automatically:
-   - `nixpacks.toml` installs Python + Node, runs `pip install -r requirements.txt`,
-     `npm ci` and `npm run build` in `frontend/`.
-   - `railway.toml` sets the start command to run `alembic upgrade head`
-     (applying any pending migrations) and then start `uvicorn`, plus a
-     `/health` healthcheck and an on-failure restart policy.
+   - `nixpacks.toml` installs Python + Node, creates a venv at `/opt/venv`
+     (nixpkgs' `python312` doesn't bundle pip; bootstrapping via
+     `ensurepip` into a venv sidesteps Nix's pip packaging entirely),
+     installs `requirements.txt` into it, and runs `npm install` +
+     `npm run build` in `frontend/`.
+   - `railway.toml` sets the start command to activate that same venv,
+     run `alembic upgrade head` (applying any pending migrations), and
+     then start `uvicorn`, plus a `/health` healthcheck and an
+     on-failure restart policy.
 3. **Set environment variables** on the service (Settings → Variables):
    - `DATABASE_URL` — reference the Postgres plugin's variable (Railway
      lets you reference `${{Postgres.DATABASE_URL}}` from another plugin

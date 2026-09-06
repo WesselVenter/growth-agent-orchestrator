@@ -23,7 +23,14 @@ cmds = [
   "python -m venv /opt/venv",
   ". /opt/venv/bin/activate && python -m ensurepip --upgrade",
   ". /opt/venv/bin/activate && python -m pip install -r requirements.txt",
-  "npm --prefix frontend ci",
+  # `install`, not `ci`: frontend/package-lock.json was generated on
+  # Windows, which only pins the Windows-specific optional native binary
+  # for Vite 8's Rolldown bundler. `ci` strictly honors the lockfile's
+  # frozen per-platform entries and won't resolve the missing
+  # linux-x64-gnu binary needed to actually run the build in this Linux
+  # container (npm/cli#4828). `install` re-resolves optional deps for the
+  # platform it's actually running on instead of trusting a stale lock.
+  "npm --prefix frontend install",
 ]
 
 [phases.build]
