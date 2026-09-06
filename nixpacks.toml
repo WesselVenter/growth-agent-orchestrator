@@ -23,13 +23,14 @@ cmds = [
   "python -m venv /opt/venv",
   ". /opt/venv/bin/activate && python -m ensurepip --upgrade",
   ". /opt/venv/bin/activate && python -m pip install -r requirements.txt",
-  # `install`, not `ci`: frontend/package-lock.json was generated on
-  # Windows, which only pins the Windows-specific optional native binary
-  # for Vite 8's Rolldown bundler. `ci` strictly honors the lockfile's
-  # frozen per-platform entries and won't resolve the missing
-  # linux-x64-gnu binary needed to actually run the build in this Linux
-  # container (npm/cli#4828). `install` re-resolves optional deps for the
-  # platform it's actually running on instead of trusting a stale lock.
+  # frontend/package-lock.json is deliberately NOT committed (see
+  # frontend/.gitignore) rather than just switching ci -> install: a
+  # lockfile generated on Windows only pins the Windows-specific optional
+  # native binary for Vite 8's Rolldown bundler, and npm won't correctly
+  # re-resolve the missing linux-x64-gnu binary needed here even via
+  # plain `install` once *any* lockfile already exists (npm/cli#4828).
+  # With no lockfile at all, npm resolves optional deps fresh for
+  # whatever platform it's actually running on.
   "npm --prefix frontend install",
 ]
 

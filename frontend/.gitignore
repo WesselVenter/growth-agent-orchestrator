@@ -12,6 +12,15 @@ dist
 dist-ssr
 *.local
 
+# Not committed: this lockfile was generated on a Windows dev machine and
+# only pins the Windows-specific optional native binary for Vite 8's
+# Rolldown bundler. Railway's Linux build container needs the
+# linux-x64-gnu binary instead, which a Windows-frozen lockfile doesn't
+# include -- npm won't re-resolve it correctly even via `npm install`
+# once a lockfile exists (npm/cli#4828). Committing this again from a
+# Windows machine will reintroduce that build failure.
+package-lock.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
